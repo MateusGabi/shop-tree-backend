@@ -4,7 +4,9 @@ var router = express.Router();
 
 const AuthorizationMiddleware = require("../middlewares/authorization");
 
-const { JWT } = require("jose");
+const { SignJWT, decodeJwt } = require("jose");
+
+const secret = new TextEncoder().encode("privateKey");
 
 // http://localhost:3000/uaa/login
 // https://jwt.io/ya
@@ -24,13 +26,10 @@ router.post("/login", async function (req, res, next) {
 
   delete userFound.password;
 
-  const token = JWT.sign(userFound, "privateKey", {
-    algorithm: "HS256",
-    expiresIn: "1 hour",
-    header: {
-      typ: "JWT",
-    },
-  });
+  const token = await new SignJWT(userFound)
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+    .setExpirationTime("1h")
+    .sign(secret);
 
   // return object
   res.json({ user: userFound, token });
@@ -42,7 +41,7 @@ router.post("/login", async function (req, res, next) {
 router.get("/me", AuthorizationMiddleware, async function (req, res, next) {
   const { authorization } = req.headers;
 
-  const user = JWT.decode(authorization);
+  const user = decodeJwt(authorization);
 
   res.json({ user });
 });
