@@ -1,14 +1,16 @@
 const debug = require("debug")("shop-tree-backend:server");
 
-const { jwtVerify } = require("jose");
+const { JWT, JWK } = require("jose");
 
-const secret = new TextEncoder().encode("privateKey");
+const key = JWK.asKey("privateKey");
 
 async function Authorization(req, res, next) {
   const { authorization } = req.headers;
 
   try {
-    await jwtVerify(authorization, secret);
+    JWT.verify(authorization, key, {
+      algorithms: ["HS256"],
+    });
   } catch (error) {
     next(error.message.toString());
   }
